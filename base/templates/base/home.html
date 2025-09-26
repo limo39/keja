@@ -1,62 +1,194 @@
 {% extends 'main.html' %}
 
 {% block content %}
-
-<main class="layout layout--3">
-  <div class="container">
-
-    <!-- Topics Start -->
-    {% include 'base/topics_component.html' %}
-
-    <!-- Topics End -->
-
-    <!-- Room List Start -->
-    <div class="roomList">
-      <div class="mobile-menu">
-        <form action="{% url 'home' %}" method="GET" class="header__search">
-          <label>
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-              <title>search</title>
-              <path
-                d="M32 30.586l-10.845-10.845c1.771-2.092 2.845-4.791 2.845-7.741 0-6.617-5.383-12-12-12s-12 5.383-12 12c0 6.617 5.383 12 12 12 2.949 0 5.649-1.074 7.741-2.845l10.845 10.845 1.414-1.414zM12 22c-5.514 0-10-4.486-10-10s4.486-10 10-10c5.514 0 10 4.486 10 10s-4.486 10-10 10z">
-              </path>
-            </svg>
-            <input name="q" placeholder="Search for posts" />
-          </label>
-        </form>
-        <div class="mobile-menuItems">
-          <a class="btn btn--main btn--pill" href="{% url 'topics' %}">Looking For Topics?</a>
-          <a class="btn btn--main btn--pill" href="{% url 'activity' %}">Recent Posts</a>
-        </div>
-      </div>
-
-      <div class="roomList__header">
-        <div>
-          <h2>Post</h2>
-          <p>{{room_count}} Houses available</p>
+<main class="layout">
+    <div class="container">
+        <div class="main-content">
+        <!-- Header Section -->
+        <div class="roomList__header">
+            <div>
+                <h2>Find Your Perfect Rental</h2>
+                <p>{{ total_properties }} properties available</p>
+            </div>
+            {% if request.user.is_authenticated %}
+            <a class="btn btn--main" href="{% url 'add_property' %}">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Add Property
+            </a>
+            {% endif %}
         </div>
 
-        <a class="btn btn--main" href="{% url 'create-room' %}">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-            <title>add</title>
-            <path
-              d="M16.943 0.943h-1.885v14.115h-14.115v1.885h14.115v14.115h1.885v-14.115h14.115v-1.885h-14.115v-14.115z">
-            </path>
-          </svg>
-          Post House
-        </a>
-      </div>
+        <!-- Search Form -->
+        <div class="search-form">
+            <form method="GET">
+                <div class="search-row">
+                    <button type="submit" class="btn btn--main">Search</button>
+                    {{ form.location }}
+                    {{ form.min_price }}
+                    {{ form.max_price }}
+                    {{ form.property_type }}
+                    {{ form.bedrooms }}
+                </div>
+            </form>
+        </div>
 
-      {% include 'base/feed_component.html' %}
+        <!-- Properties Grid -->
+        <div class="roomList">
+            {% for property in properties %}
+            <div class="roomListRoom">
+                {% if property.main_image %}
+                <div class="roomListRoom__image">
+                    <img src="{{ property.imageURL }}" alt="{{ property.title }}">
+                </div>
+                {% endif %}
+                
+                <div class="roomListRoom__content">
+                    <span class="roomListRoom__author">@{{ property.landlord.username }}</span>
+                    <div class="roomListRoom__topic">{{ property.get_property_type_display }}</div>
+                    
+                    <h3><a href="{% url 'property_detail' property.id %}">{{ property.title }}</a></h3>
+                    <p>{{ property.description|truncatewords:15 }}</p>
+                    
+                    <div class="roomListRoom__meta">
+                        <span class="roomListRoom__price">${{ property.rent_amount }}/month</span>
+                        <span class="roomListRoom__location">📍 {{ property.location }}</span>
+                        <span class="roomListRoom__details">{{ property.bedrooms }}BR • {{ property.bathrooms }}BA • {{ property.area_sqft }} sq ft</span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-properties">
+                <h3>No properties found</h3>
+                <p>Try adjusting your search criteria{% if request.user.is_authenticated %} or <a href="{% url 'add_property' %}">add a new property</a>{% endif %}.</p>
+            </div>
+            {% endfor %}
+        </div>
 
+        <!-- Pagination -->
+        {% if properties.has_other_pages %}
+        <div class="pagination">
+            <span class="pagination__links">
+                {% if properties.has_previous %}
+                    <a href="?page=1{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.property_type %}&property_type={{ request.GET.property_type }}{% endif %}{% if request.GET.bedrooms %}&bedrooms={{ request.GET.bedrooms }}{% endif %}">&laquo; first</a>
+                    <a href="?page={{ properties.previous_page_number }}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.property_type %}&property_type={{ request.GET.property_type }}{% endif %}{% if request.GET.bedrooms %}&bedrooms={{ request.GET.bedrooms }}{% endif %}">previous</a>
+                {% endif %}
+
+                <span class="pagination__current">
+                    Page {{ properties.number }} of {{ properties.paginator.num_pages }}
+                </span>
+
+                {% if properties.has_next %}
+                    <a href="?page={{ properties.next_page_number }}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.property_type %}&property_type={{ request.GET.property_type }}{% endif %}{% if request.GET.bedrooms %}&bedrooms={{ request.GET.bedrooms }}{% endif %}">next</a>
+                    <a href="?page={{ properties.paginator.num_pages }}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.property_type %}&property_type={{ request.GET.property_type }}{% endif %}{% if request.GET.bedrooms %}&bedrooms={{ request.GET.bedrooms }}{% endif %}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+        </div>
     </div>
-    <!-- Room List End -->
-
-    <!-- Activities Start -->
-    {% include 'base/activity_component.html' %}
-
-    <!-- Activities End -->
-  </div>
 </main>
 
-{% endblock %}
+<style>
+.search-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.search-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: center;
+}
+
+.search-row input, .search-row select {
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+
+.roomList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.roomListRoom {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.roomListRoom:hover {
+    transform: translateY(-2px);
+}
+
+.roomListRoom__image img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.roomListRoom__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.roomListRoom__price {
+    font-weight: bold;
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+
+.pagination {
+    margin-top: 3rem;
+    text-align: center;
+}
+
+.pagination__links a {
+    margin: 0 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #f7fafc;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: #2d3748;
+}
+
+.pagination__current {
+    margin: 0 1rem;
+    font-weight: bold;
+}
+
+.no-properties {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .search-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .roomList {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock content %}

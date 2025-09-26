@@ -1,0 +1,65 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<main class="layout">
+    <div class="container">
+        <div class="error-page">
+            <div class="error-content">
+                <h1>404</h1>
+                <h2>Page Not Found</h2>
+                <p>The property or page you're looking for doesn't exist or has been moved.</p>
+                <div class="error-actions">
+                    <a href="{% url 'home' %}" class="btn btn--main">Browse Properties</a>
+                    <a href="javascript:history.back()" class="btn btn--dark">Go Back</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<style>
+.error-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+}
+
+.error-content h1 {
+    font-size: 6rem;
+    color: #2b6cb0;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.error-content h2 {
+    font-size: 2rem;
+    color: #2d3748;
+    margin-bottom: 1rem;
+}
+
+.error-content p {
+    color: #718096;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .error-content h1 {
+        font-size: 4rem;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+{% endblock content %}

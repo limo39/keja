@@ -1,11 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
-from .models import Room, Topic, Message, User
-from .forms import RoomForm, UserForm, MyUserCreationForm
+from django.core.paginator import Paginator
+from .models import Room, Topic, Message, User, Property
+from .forms import RoomForm, UserForm, MyUserCreationForm, PropertyForm, PropertySearchForm
 
 
 def loginPage(request):
@@ -14,13 +15,18 @@ def loginPage(request):
         return redirect('home')
 
     if request.method == 'POST':
-        email = request.POST.get('email').lower()
-        password = request.POST.get('password')
+        email = request.POST.get('email', '').lower()
+        password = request.POST.get('password', '')
+
+        if not email or not password:
+            messages.error(request, 'Please provide both email and password')
+            return render(request, 'base/login_register.html', {'page': page})
 
         try:
             user = User.objects.get(email=email)
-        except:
-            messages.error(request, 'User does not exist')
+        except User.DoesNotExist:
+            messages.error(request, 'User with this email does not exist')
+            return render(request, 'base/login_register.html', {'page': page})
 
         user = authenticate(request, email=email, password=password)
 
@@ -28,7 +34,7 @@ def loginPage(request):
             login(request, user)
             return redirect('home')
         else:
-            messages.error(request, 'Username OR password does not exit')
+            messages.error(request, 'Invalid email or password')
 
     context = {'page': page}
     return render(request, 'base/login_register.html', context)
@@ -47,32 +53,59 @@ def registerPage(request):
         if form.is_valid():
             user = form.save(commit=False)
             user.username = user.username.lower()
+            user.email = user.email.lower() if user.email else ''
             user.save()
             login(request, user)
+            messages.success(request, 'Registration successful! Welcome to Keja!')
             return redirect('home')
         else:
-            messages.error(request, 'An error occurred during registration')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
 
     return render(request, 'base/login_register.html', {'form': form})
 
 
 def home(request):
-    q = request.GET.get('q') if request.GET.get('q') != None else ''
-
-    rooms = Room.objects.filter(
-        Q(topic__name__icontains=q) |
-        Q(name__icontains=q) |
-        Q(amount__icontains=q)|
-        Q(description__icontains=q)
-    )
-
-    topics = Topic.objects.all()[0:5]
-    room_count = rooms.count()
-    room_messages = Message.objects.filter(
-        Q(room__topic__name__icontains=q))[0:3]
-
-    context = {'rooms': rooms, 'topics': topics,
-               'room_count': room_count, 'room_messages': room_messages}
+    # Property search functionality
+    form = PropertySearchForm(request.GET)
+    properties = Property.objects.filter(is_available=True).order_by('-created')
+    
+    if form.is_valid():
+        location = form.cleaned_data.get('location')
+        min_price = form.cleaned_data.get('min_price')
+        max_price = form.cleaned_data.get('max_price')
+        property_type = form.cleaned_data.get('property_type')
+        bedrooms = form.cleaned_data.get('bedrooms')
+        
+        if location:
+            properties = properties.filter(
+                Q(location__icontains=location) | Q(address__icontains=location)
+            )
+        if min_price:
+            properties = properties.filter(rent_amount__gte=min_price)
+        if max_price:
+            properties = properties.filter(rent_amount__lte=max_price)
+        if property_type:
+            properties = properties.filter(property_type=property_type)
+        if bedrooms:
+            properties = properties.filter(bedrooms__gte=bedrooms)
+    
+    # Pagination
+    paginator = Paginator(properties, 12)
+    page_number = request.GET.get('page')
+    properties = paginator.get_page(page_number)
+    
+    # Get some stats
+    total_properties = Property.objects.filter(is_available=True).count()
+    property_types = Property.objects.values_list('property_type', flat=True).distinct()
+    
+    context = {
+        'properties': properties,
+        'form': form,
+        'total_properties': total_properties,
+        'property_types': property_types,
+    }
     return render(request, 'base/home.html', context)
 
 
@@ -195,3 +228,68 @@ def topicsPage(request):
 def activityPage(request):
     room_messages = Message.objects.all()
     return render(request, 'base/activity.html', {'room_messages': room_messages})
+
+
+# Property Views
+def property_detail(request, pk):
+    property = get_object_or_404(Property, pk=pk, is_available=True)
+    related_properties = Property.objects.filter(
+        location__icontains=property.location,
+        is_available=True
+    ).exclude(pk=pk)[:4]
+    
+    context = {
+        'property': property,
+        'related_properties': related_properties,
+    }
+    return render(request, 'base/property_detail.html', context)
+
+
+@login_required(login_url='login')
+def add_property(request):
+    if request.method == 'POST':
+        form = PropertyForm(request.POST, request.FILES)
+        if form.is_valid():
+            property = form.save(commit=False)
+            property.landlord = request.user
+            property.save()
+            messages.success(request, 'Property added successfully!')
+            return redirect('property_detail', pk=property.pk)
+    else:
+        form = PropertyForm()
+    
+    return render(request, 'base/add_property.html', {'form': form})
+
+
+@login_required(login_url='login')
+def edit_property(request, pk):
+    property = get_object_or_404(Property, pk=pk, landlord=request.user)
+    
+    if request.method == 'POST':
+        form = PropertyForm(request.POST, request.FILES, instance=property)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Property updated successfully!')
+            return redirect('property_detail', pk=property.pk)
+    else:
+        form = PropertyForm(instance=property)
+    
+    return render(request, 'base/edit_property.html', {'form': form, 'property': property})
+
+
+@login_required(login_url='login')
+def my_properties(request):
+    properties = Property.objects.filter(landlord=request.user).order_by('-created')
+    return render(request, 'base/my_properties.html', {'properties': properties})
+
+
+@login_required(login_url='login')
+def delete_property(request, pk):
+    property = get_object_or_404(Property, pk=pk, landlord=request.user)
+    
+    if request.method == 'POST':
+        property.delete()
+        messages.success(request, 'Property deleted successfully!')
+        return redirect('my_properties')
+    
+    return render(request, 'base/delete.html', {'obj': property})

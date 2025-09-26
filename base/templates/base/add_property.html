@@ -1,0 +1,133 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<main class="create-room layout">
+    <div class="container">
+        <div class="layout__box">
+            <div class="layout__boxHeader">
+                <div class="layout__boxTitle">
+                    <a href="{% url 'home' %}">
+                        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+                            <title>arrow-left</title>
+                            <path d="M13.723 2.286l-13.723 13.714 13.719 13.714 1.616-1.611-10.96-10.96h27.625v-2.286h-27.625l10.965-10.965-1.616-1.607z"></path>
+                        </svg>
+                    </a>
+                    <h3>Add New Property</h3>
+                </div>
+            </div>
+            <div class="layout__body">
+                <form class="form" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="form__group">
+                        <label for="id_title">Property Title</label>
+                        {{ form.title }}
+                    </div>
+
+                    <div class="form__group form__group--inline">
+                        <div>
+                            <label for="id_property_type">Property Type</label>
+                            {{ form.property_type }}
+                        </div>
+                        <div>
+                            <label for="id_rent_amount">Monthly Rent ($)</label>
+                            {{ form.rent_amount }}
+                        </div>
+                    </div>
+
+                    <div class="form__group">
+                        <label for="id_location">Location/City</label>
+                        {{ form.location }}
+                    </div>
+
+                    <div class="form__group">
+                        <label for="id_address">Full Address</label>
+                        {{ form.address }}
+                    </div>
+
+                    <div class="form__group form__group--inline">
+                        <div>
+                            <label for="id_bedrooms">Bedrooms</label>
+                            {{ form.bedrooms }}
+                        </div>
+                        <div>
+                            <label for="id_bathrooms">Bathrooms</label>
+                            {{ form.bathrooms }}
+                        </div>
+                        <div>
+                            <label for="id_area_sqft">Area (sq ft)</label>
+                            {{ form.area_sqft }}
+                        </div>
+                    </div>
+
+                    <div class="form__group">
+                        <label for="id_description">Description</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="form__group">
+                        <label for="id_amenities">Amenities</label>
+                        {{ form.amenities }}
+                    </div>
+
+                    <div class="form__group">
+                        <label for="id_date_available">Available From</label>
+                        {{ form.date_available }}
+                    </div>
+
+                    <div class="form__group">
+                        <label for="id_main_image">Main Image</label>
+                        {{ form.main_image }}
+                    </div>
+
+                    <div class="form__action">
+                        <a class="btn btn--dark" href="{% url 'home' %}">Cancel</a>
+                        <button class="btn btn--main" type="submit">
+                            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+                                <title>add</title>
+                                <path d="M16.943 0.943h-1.885v14.115h-14.115v1.885h14.115v14.115h1.885v-14.115h14.115v-1.885h-14.115v-14.115z"></path>
+                            </svg>
+                            Add Property
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<style>
+.form__group--inline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.form__group--inline > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.form__group--inline label {
+    margin-bottom: 0.5rem;
+}
+
+.form input[type="file"] {
+    padding: 0.5rem;
+    border: 2px dashed #ddd;
+    border-radius: 0.5rem;
+    background: #f9f9f9;
+}
+
+.form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+@media (max-width: 768px) {
+    .form__group--inline {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock content %}

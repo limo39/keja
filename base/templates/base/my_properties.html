@@ -1,0 +1,220 @@
+{% extends 'main.html' %}
+
+{% block content %}
+<main class="profile-page layout layout--3">
+    <div class="container">
+        <div class="layout__box">
+            <div class="layout__boxHeader">
+                <div class="layout__boxTitle">
+                    <h3>My Properties</h3>
+                </div>
+                <a class="btn btn--main" href="{% url 'add_property' %}">
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+                        <title>add</title>
+                        <path d="M16.943 0.943h-1.885v14.115h-14.115v1.885h14.115v14.115h1.885v-14.115h14.115v-1.885h-14.115v-14.115z"></path>
+                    </svg>
+                    Add Property
+                </a>
+            </div>
+            <div class="layout__body">
+                {% if properties %}
+                <div class="properties-grid">
+                    {% for property in properties %}
+                    <div class="property-card">
+                        {% if property.main_image %}
+                        <div class="property-card__image">
+                            <img src="{{ property.imageURL }}" alt="{{ property.title }}">
+                        </div>
+                        {% endif %}
+                        
+                        <div class="property-card__content">
+                            <div class="property-card__header">
+                                <h4><a href="{% url 'property_detail' property.id %}">{{ property.title }}</a></h4>
+                                <span class="property-card__status {% if property.is_available %}available{% else %}unavailable{% endif %}">
+                                    {% if property.is_available %}Available{% else %}Unavailable{% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="property-card__details">
+                                <p class="property-card__price">${{ property.rent_amount }}/month</p>
+                                <p class="property-card__location">📍 {{ property.location }}</p>
+                                <p class="property-card__specs">{{ property.bedrooms }}BR • {{ property.bathrooms }}BA • {{ property.area_sqft }} sq ft</p>
+                            </div>
+                            
+                            <div class="property-card__actions">
+                                <a href="{% url 'property_detail' property.id %}" class="btn btn--main btn--small">View</a>
+                                <a href="{% url 'edit_property' property.id %}" class="btn btn--dark btn--small">Edit</a>
+                                <a href="{% url 'delete_property' property.id %}" class="btn btn--danger btn--small">Delete</a>
+                            </div>
+                            
+                            <div class="property-card__meta">
+                                <small>Listed {{ property.created|timesince }} ago</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="no-properties">
+                    <div class="no-properties__content">
+                        <h3>No Properties Yet</h3>
+                        <p>You haven't listed any properties yet. Start by adding your first rental property!</p>
+                        <a href="{% url 'add_property' %}" class="btn btn--main">Add Your First Property</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</main>
+
+<style>
+.properties-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.property-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.property-card:hover {
+    transform: translateY(-2px);
+}
+
+.property-card__image img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.property-card__content {
+    padding: 1.5rem;
+}
+
+.property-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.property-card__header h4 {
+    margin: 0;
+    flex: 1;
+}
+
+.property-card__header a {
+    text-decoration: none;
+    color: #2d3748;
+}
+
+.property-card__status {
+    padding: 0.3rem 0.8rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.property-card__status.available {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.property-card__status.unavailable {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.property-card__details {
+    margin-bottom: 1.5rem;
+}
+
+.property-card__price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.property-card__location,
+.property-card__specs {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+.property-card__actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.btn--small {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+.btn--danger {
+    background: #e53e3e;
+    color: white;
+}
+
+.btn--danger:hover {
+    background: #c53030;
+}
+
+.property-card__meta {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+.property-card__meta small {
+    color: #999;
+}
+
+.no-properties {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+.no-properties__content {
+    text-align: center;
+    max-width: 400px;
+}
+
+.no-properties__content h3 {
+    margin-bottom: 1rem;
+    color: #2d3748;
+}
+
+.no-properties__content p {
+    margin-bottom: 2rem;
+    color: #666;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .properties-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .property-card__header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .property-card__actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock content %}
