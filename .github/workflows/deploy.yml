@@ -29,6 +29,8 @@ jobs:
       - name: Run Tests Before Deploy
         run: |
           python manage.py test
+        env:
+          DJANGO_SETTINGS_MODULE: keja.settings
 
       - name: Collect Static Files
         run: |

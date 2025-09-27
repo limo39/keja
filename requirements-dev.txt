@@ -1,0 +1,14 @@
+# Development dependencies
+-r requirement.txt
+
+# Code formatting and linting
+black==23.3.0
+isort==5.12.0
+flake8==6.0.0
+
+# Testing and coverage
+coverage==7.2.0
+
+# Security scanning
+bandit==1.7.5
+safety==2.3.0
