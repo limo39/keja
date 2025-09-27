@@ -186,7 +186,7 @@ class PropertyFormTest(TestCase):
             password='testpass123'
         )
         self.client = Client()
-        self.client.login(email='test@example.com', password='testpass123')
+        self.client.force_login(self.user)
 
     def test_add_property_page_requires_login(self):
         """Test that add property page requires authentication"""

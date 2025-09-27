@@ -31,7 +31,7 @@ def loginPage(request):
         user = authenticate(request, email=email, password=password)
 
         if user is not None:
-            login(request, user)
+            login(request, user, backend='base.backends.EmailBackend')
             return redirect('home')
         else:
             messages.error(request, 'Invalid email or password')
@@ -55,7 +55,7 @@ def registerPage(request):
             user.username = user.username.lower()
             user.email = user.email.lower() if user.email else ''
             user.save()
-            login(request, user)
+            login(request, user, backend='base.backends.EmailBackend')
             messages.success(request, 'Registration successful! Welcome to Keja!')
             return redirect('home')
         else:
